@@ -139,10 +139,13 @@ def crear_empresa(
                 detail=f"Ya existe una empresa con la razón social '{existente_rs.razon_social}' (ID: {existente_rs.id})",
             )
     empresa = Empresa(**data.model_dump())
-    # Geocodificar
-    lat, lon = geocode_ciudad(empresa.ciudad, empresa.provincia)
-    empresa.latitud = lat
-    empresa.longitud = lon
+    # Geocodificar (no-bloqueante: si falla, la empresa se crea igual)
+    try:
+        lat, lon = geocode_ciudad(empresa.ciudad, empresa.provincia)
+        empresa.latitud = lat
+        empresa.longitud = lon
+    except Exception:
+        pass
     db.add(empresa)
     db.flush()
     # Asignar al creador como comercial

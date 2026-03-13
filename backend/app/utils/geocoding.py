@@ -25,7 +25,7 @@ def geocode_ciudad(ciudad: str | None, provincia: str | None) -> tuple[float | N
         })
         url = f"{NOMINATIM_URL}?{params}"
         req = urllib.request.Request(url, headers={"User-Agent": "CRM-Abisysa/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read().decode())
         if data:
             return float(data[0]["lat"]), float(data[0]["lon"])

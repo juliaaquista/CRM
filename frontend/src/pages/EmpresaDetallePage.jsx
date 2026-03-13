@@ -122,7 +122,7 @@ export default function EmpresaDetallePage() {
       setContactoModal(false);
       fetchAll();
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) { message.error(err.response.data?.detail || 'Error'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setSaving(false);
     }
@@ -215,7 +215,7 @@ export default function EmpresaDetallePage() {
       const data = await sucursalesApi.listByEmpresa(id);
       setSucursales(data);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) { message.error(err.response.data?.detail || 'Error'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setSavingSucursal(false);
     }
@@ -255,7 +255,7 @@ export default function EmpresaDetallePage() {
       const data = await empresasApi.listComerciales(id);
       setComerciales(data);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error al compartir');
+      if (err.response) { message.error(err.response.data?.detail || 'Error al compartir'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setSavingCompartir(false);
     }
@@ -288,7 +288,7 @@ export default function EmpresaDetallePage() {
       const data = await empresasApi.listComerciales(id);
       setComerciales(data);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error al asignar');
+      if (err.response) { message.error(err.response.data?.detail || 'Error al asignar'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setSavingAsignar(false);
     }

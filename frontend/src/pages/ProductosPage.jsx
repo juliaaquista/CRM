@@ -79,7 +79,7 @@ export default function ProductosPage() {
       fetchProductos(pagination.current, pagination.pageSize);
       fetchCategorias();
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) { message.error(err.response.data?.detail || 'Error'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setSaving(false);
     }

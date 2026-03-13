@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_password123}
       POSTGRES_DB: ${POSTGRES_DB:-crm_db}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -45,5 +45,4 @@ services:
       - "80:80"
 
 volumes:
-  pgdata:
   uploads:

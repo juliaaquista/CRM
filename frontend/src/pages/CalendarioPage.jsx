@@ -245,7 +245,12 @@ export default function CalendarioPage() {
       setModalOpen(false);
       fetchData(currentMonth);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error al guardar');
+      if (err.response) {
+        message.error(err.response.data?.detail || 'Error al guardar');
+      } else if (!err.errorFields) {
+        console.error('Error guardando acción:', err);
+        message.error('Error de conexión al guardar. Intenta de nuevo.');
+      }
     } finally {
       setSaving(false);
     }
@@ -300,7 +305,12 @@ export default function CalendarioPage() {
       setAlertaModalOpen(false);
       fetchData(currentMonth);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error al guardar');
+      if (err.response) {
+        message.error(err.response.data?.detail || 'Error al guardar');
+      } else if (!err.errorFields) {
+        console.error('Error guardando alerta:', err);
+        message.error('Error de conexión al guardar. Intenta de nuevo.');
+      }
     } finally {
       setAlertaSaving(false);
     }

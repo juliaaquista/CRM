@@ -74,7 +74,7 @@ def seed():
     emp3 = Empresa(nombre="Constructora Levante", ciudad="Sevilla", provincia="Sevilla",
                    razon_social="Constructora Levante SL",
                    notas_comerciales="Constructora con proyectos en toda Andalucia",
-                   origen=OrigenEmpresaEnum.PROSPECCION)
+                   origen=OrigenEmpresaEnum.ABISYSA)
     emp4 = Empresa(nombre="Logistica Express", ciudad="Barcelona", provincia="Barcelona",
                    razon_social="Logistica Express SA",
                    notas_comerciales="Empresa de transporte y logistica nacional",
@@ -133,13 +133,13 @@ def seed():
     of1 = Oferta(empresa_id=emp1.id, estado=EstadoOfertaEnum.ENTREGADA,
                  precio_negociado=7500.0, notas="Propuesta de ERP con migracion incluida",
                  creado_por_id=comercial1.id)
-    of2 = Oferta(empresa_id=emp1.id, estado=EstadoOfertaEnum.ACEPTADA,
+    of2 = Oferta(empresa_id=emp1.id, estado=EstadoOfertaEnum.ENTREGADA,
                  precio_negociado=4500.0, condiciones_venta="Pago en 3 cuotas",
                  notas="Consultoria inicial completada", creado_por_id=comercial1.id)
-    of3 = Oferta(empresa_id=emp3.id, estado=EstadoOfertaEnum.ACEPTADA,
+    of3 = Oferta(empresa_id=emp3.id, estado=EstadoOfertaEnum.VISITAR,
                  precio_negociado=11000.0, condiciones_venta="Contrato anual renovable",
                  notas="Firmado por 1 ano", creado_por_id=comercial1.id)
-    of4 = Oferta(empresa_id=emp6.id, estado=EstadoOfertaEnum.SOLICITADA,
+    of4 = Oferta(empresa_id=emp6.id, estado=EstadoOfertaEnum.PREOFERTA,
                  notas="Pendiente elaborar propuesta", creado_por_id=comercial2.id)
     of5 = Oferta(empresa_id=emp4.id, estado=EstadoOfertaEnum.STANDBY,
                  precio_negociado=9200.0, notas="Esperando aprobacion de presupuesto del cliente",
@@ -170,7 +170,7 @@ def seed():
                estado=EstadoAccionEnum.FINALIZADA, fecha_hora=now - timedelta(days=15, hours=2),
                duracion_minutos=30, descripcion="Primer contacto con Ana Ruiz. Interesados en modernizar su ERP.",
                creado_por_id=comercial1.id),
-        Accion(empresa_id=emp1.id, contacto_id=c1.id, tipo=TipoAccionEnum.REUNION,
+        Accion(empresa_id=emp1.id, contacto_id=c1.id, tipo=TipoAccionEnum.VISITA,
                estado=EstadoAccionEnum.FINALIZADA, fecha_hora=now - timedelta(days=10, hours=4),
                duracion_minutos=90, descripcion="Reunion presencial con CTO. Presentamos portafolio completo.",
                creado_por_id=comercial1.id),
@@ -186,7 +186,7 @@ def seed():
                estado=EstadoAccionEnum.FINALIZADA, fecha_hora=now - timedelta(days=8, hours=1),
                duracion_minutos=20, descripcion="Contacto inicial con Maria. Necesitan cloud.",
                creado_por_id=comercial1.id),
-        Accion(empresa_id=emp3.id, contacto_id=c4.id, tipo=TipoAccionEnum.REUNION,
+        Accion(empresa_id=emp3.id, contacto_id=c4.id, tipo=TipoAccionEnum.VISITA,
                estado=EstadoAccionEnum.FINALIZADA, fecha_hora=now - timedelta(days=30, hours=6),
                duracion_minutos=120, descripcion="Presentacion inicial del servicio de soporte.",
                creado_por_id=comercial1.id),
@@ -198,11 +198,11 @@ def seed():
                estado=EstadoAccionEnum.PENDIENTE, fecha_hora=now + timedelta(days=3, hours=4),
                duracion_minutos=90, descripcion="Visita programada a sede Barcelona.",
                creado_por_id=comercial2.id),
-        Accion(empresa_id=emp6.id, contacto_id=c7.id, tipo=TipoAccionEnum.REUNION,
+        Accion(empresa_id=emp6.id, contacto_id=c7.id, tipo=TipoAccionEnum.VISITA,
                estado=EstadoAccionEnum.FINALIZADA, fecha_hora=now - timedelta(days=7, hours=3),
                duracion_minutos=60, descripcion="Reunion virtual con Valentina. Quieren digitalizar procesos.",
                creado_por_id=comercial2.id),
-        Accion(tipo=TipoAccionEnum.OFICINA, estado=EstadoAccionEnum.PENDIENTE,
+        Accion(tipo=TipoAccionEnum.OTRO, estado=EstadoAccionEnum.PENDIENTE,
                fecha_hora=now + timedelta(days=1, hours=2), duracion_minutos=120,
                descripcion="Preparar presupuesto Logistica Express", es_resumida=True,
                nombre_cliente_resumida="Logistica Express", creado_por_id=comercial2.id),

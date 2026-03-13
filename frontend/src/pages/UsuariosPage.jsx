@@ -66,7 +66,7 @@ export default function UsuariosPage() {
       setCreateOpen(false);
       fetchUsuarios();
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) { message.error(err.response.data?.detail || 'Error'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setCreateSaving(false);
     }
@@ -92,7 +92,7 @@ export default function UsuariosPage() {
       setEditOpen(false);
       fetchUsuarios();
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) { message.error(err.response.data?.detail || 'Error'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setEditSaving(false);
     }
@@ -124,7 +124,7 @@ export default function UsuariosPage() {
       message.success('Contraseña actualizada');
       setPwdOpen(false);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) { message.error(err.response.data?.detail || 'Error'); } else if (!err.errorFields) { console.error('Error:', err); message.error('Error de conexión. Intenta de nuevo.'); }
     } finally {
       setPwdSaving(false);
     }

@@ -145,7 +145,12 @@ export default function OfertasPage() {
       fetchOfertas(pagination.current, pagination.pageSize);
       if (viewMode === 'kanban') fetchKanban();
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error');
+      if (err.response) {
+        message.error(err.response.data?.detail || 'Error al guardar oferta');
+      } else if (!err.errorFields) {
+        console.error('Error creando oferta:', err);
+        message.error('Error de conexión al guardar. Intenta de nuevo.');
+      }
     } finally {
       setSaving(false);
     }

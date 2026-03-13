@@ -23,7 +23,7 @@ const ORIGEN_COLOR = {
   ABISYSA: '#13468A', REFERIDO: 'cyan', OTRO: 'default',
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 export default function EmpresasPage() {
   const [empresas, setEmpresas] = useState([]);
@@ -151,7 +151,13 @@ export default function EmpresasPage() {
       setModalOpen(false);
       fetchEmpresas(pagination.current, pagination.pageSize);
     } catch (err) {
-      if (err.response) message.error(err.response.data?.detail || 'Error al guardar');
+      // err sin .response ni .errorFields = error de red/timeout
+      if (err.response) {
+        message.error(err.response.data?.detail || 'Error al guardar');
+      } else if (!err.errorFields) {
+        console.error('Error creando empresa:', err);
+        message.error('Error de conexión al guardar. Intenta de nuevo.');
+      }
     } finally {
       setSaving(false);
     }
@@ -289,7 +295,7 @@ export default function EmpresasPage() {
           pagination={{
             ...pagination,
             showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50'],
+            pageSizeOptions: ['20', '50', '100'],
             showTotal: (total) => `${total} empresas`,
           }}
           onChange={handleTableChange}
