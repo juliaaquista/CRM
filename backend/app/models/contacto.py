@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
+
 class Contacto(Base):
     __tablename__ = "contactos"
 
@@ -11,5 +12,7 @@ class Contacto(Base):
     cargo = Column(String)
     email = Column(String)
     telefono = Column(String)
+    sucursal = Column(String)
 
     empresa = relationship("Empresa", back_populates="contactos")
+    acciones = relationship("Accion", back_populates="contacto")

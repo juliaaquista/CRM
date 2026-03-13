@@ -1,0 +1,89 @@
+/* ── Responsive / Mobile ── */
+@media (max-width: 768px) {
+  /* Reduce content padding on mobile */
+  .ant-layout-content {
+    padding: 12px !important;
+    margin: 8px !important;
+  }
+
+  /* Header adjustments */
+  .ant-layout-header {
+    padding: 0 12px !important;
+  }
+
+  /* Make global search narrower on mobile */
+  .ant-layout-header .ant-select-auto-complete {
+    width: 180px !important;
+  }
+
+  /* Tables scroll horizontally */
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+
+  /* Kanban scroll */
+  .kanban-container {
+    min-width: 800px;
+  }
+
+  /* Stack buttons on mobile */
+  .ant-space-horizontal {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 576px) {
+  .ant-layout-content {
+    padding: 8px !important;
+    margin: 4px !important;
+  }
+
+  .ant-layout-header .ant-select-auto-complete {
+    width: 140px !important;
+  }
+
+  /* Hide user name text on very small screens */
+  .ant-layout-header .ant-typography {
+    display: none;
+  }
+}
+
+/* ── Print styles for Informes/PDF export ── */
+@media print {
+  /* Hide sider, header, navigation */
+  .ant-layout-sider,
+  .ant-layout-header,
+  button,
+  .ant-segmented,
+  .ant-select,
+  .ant-picker {
+    display: none !important;
+  }
+
+  /* Reset layout for print */
+  .ant-layout-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .ant-layout {
+    background: white !important;
+  }
+
+  /* Ensure cards display properly */
+  .ant-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Remove fixed positioning */
+  * {
+    position: static !important;
+  }
+
+  body {
+    padding: 0;
+    margin: 0;
+  }
+}
