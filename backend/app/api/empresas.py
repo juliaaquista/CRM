@@ -44,10 +44,14 @@ def _get_empresa_ids_comercial(db: Session, user_id: int) -> list[int]:
     return [r[0] for r in rows]
 
 
-def verificar_acceso_empresa(db: Session, empresa: Empresa, user: Usuario):
-    """Verifica que el usuario tenga acceso a la empresa."""
+def verificar_acceso_empresa(db: Session, empresa: Empresa, user: Usuario, solo_lectura: bool = False):
+    """Verifica que el usuario tenga acceso a la empresa.
+    Si solo_lectura=True, cualquier COMERCIAL puede leer (pero no editar).
+    """
     if user.rol == RolEnum.JEFE:
         return
+    if solo_lectura:
+        return  # COMERCIAL puede ver cualquier empresa
     ids = _get_empresa_ids_comercial(db, user.id)
     if empresa.id not in ids:
         raise HTTPException(status_code=403, detail="No tienes acceso a esta empresa")
@@ -62,9 +66,7 @@ def listar_empresas(
     current_user: Usuario = Depends(get_current_active_user),
 ):
     query = db.query(Empresa)
-    if current_user.rol == RolEnum.COMERCIAL:
-        ids = _get_empresa_ids_comercial(db, current_user.id)
-        query = query.filter(Empresa.id.in_(ids))
+    # Todos los usuarios ven todas las empresas (comerciales incluidos)
     if q:
         pattern = f"%{q}%"
         query = query.filter(
@@ -75,7 +77,26 @@ def listar_empresas(
         )
     total = query.count()
     items = query.order_by(Empresa.nombre).offset(skip).limit(limit).all()
-    return {"items": items, "total": total}
+
+    # Obtener comerciales titulares para las empresas de esta página
+    emp_ids = [e.id for e in items]
+    comerciales_map = {}
+    if emp_ids:
+        ecs = db.query(EmpresaComercial).filter(
+            EmpresaComercial.empresa_id.in_(emp_ids),
+            EmpresaComercial.tipo == "TITULAR",
+        ).all()
+        for ec in ecs:
+            nombre = ec.comercial.nombre if ec.comercial else "?"
+            comerciales_map.setdefault(ec.empresa_id, []).append(nombre)
+
+    result = []
+    for emp in items:
+        emp_dict = EmpresaResponse.model_validate(emp).model_dump()
+        emp_dict["comerciales_nombres"] = ", ".join(comerciales_map.get(emp.id, []))
+        result.append(emp_dict)
+
+    return {"items": result, "total": total}
 
 
 @router.post("/geocode-all")
@@ -109,7 +130,7 @@ def obtener_empresa(
     empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
     if not empresa:
         raise HTTPException(status_code=404, detail="Empresa no encontrada")
-    verificar_acceso_empresa(db, empresa, current_user)
+    verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
     return empresa
 
 
@@ -320,7 +341,7 @@ def listar_comerciales_empresa(
     empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
     if not empresa:
         raise HTTPException(status_code=404, detail="Empresa no encontrada")
-    verificar_acceso_empresa(db, empresa, current_user)
+    verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
 
     # Limpiar compartidos expirados antes de listar
     _limpiar_compartidos_expirados(db)
@@ -361,7 +382,7 @@ def listar_archivos(
     empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
     if not empresa:
         raise HTTPException(status_code=404, detail="Empresa no encontrada")
-    verificar_acceso_empresa(db, empresa, current_user)
+    verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
     archivos = db.query(EmpresaArchivo).filter(
         EmpresaArchivo.empresa_id == empresa_id
     ).order_by(EmpresaArchivo.subido_en.desc()).all()
@@ -429,7 +450,7 @@ def descargar_archivo(
     empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
     if not empresa:
         raise HTTPException(status_code=404, detail="Empresa no encontrada")
-    verificar_acceso_empresa(db, empresa, current_user)
+    verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
 
     archivo = db.query(EmpresaArchivo).filter(
         EmpresaArchivo.id == archivo_id,

@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Calendar, Badge, Modal, Form, Select, DatePicker, InputNumber, Input,
   Tag, Drawer, Button, Descriptions, Space, Popconfirm, App as AntApp, Spin,
-  Checkbox, Segmented,
+  Checkbox, Segmented, Divider, Typography,
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, BellOutlined, CheckOutlined,
-  LeftOutlined, RightOutlined, WarningOutlined,
+  LeftOutlined, RightOutlined, WarningOutlined, CloseCircleOutlined, UndoOutlined, CheckCircleOutlined,
+  VideoCameraOutlined, LinkOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
@@ -15,9 +16,10 @@ import { useSearchParams } from 'react-router-dom';
 import * as accionesApi from '../api/acciones';
 import * as alertasApi from '../api/alertas';
 import * as empresasApi from '../api/empresas';
+import * as contactosApi from '../api/contactos';
 import {
   TIPO_ACCION, ESTADO_ACCION, TIPO_ACCION_COLOR, ESTADO_ACCION_COLOR,
-  toOptions, toEntityOptions,
+  ORIGEN_EMPRESA, toOptions, toEntityOptions,
 } from '../constants/enums';
 
 export default function CalendarioPage() {
@@ -48,6 +50,17 @@ export default function CalendarioPage() {
   // Drawer detalle alerta
   const [drawerAlerta, setDrawerAlerta] = useState(null);
 
+  // Contactos para participantes
+  const [contactos, setContactos] = useState([]);
+  const [contactoModalOpen, setContactoModalOpen] = useState(false);
+  const [contactoSaving, setContactoSaving] = useState(false);
+  const [contactoForm] = Form.useForm();
+
+  // Crear empresa inline (desde modal contacto)
+  const [empresaModalOpen, setEmpresaModalOpen] = useState(false);
+  const [empresaSaving, setEmpresaSaving] = useState(false);
+  const [empresaForm] = Form.useForm();
+
   const { message } = AntApp.useApp();
 
   const fetchData = useCallback(async (month) => {
@@ -74,6 +87,7 @@ export default function CalendarioPage() {
 
   useEffect(() => {
     empresasApi.list(0, 100).then((res) => setEmpresas(res.items)).catch(() => {});
+    contactosApi.list({ limit: 500 }).then((res) => setContactos(res.items || res)).catch(() => {});
   }, []);
 
   const onPanelChange = (value) => {
@@ -194,6 +208,49 @@ export default function CalendarioPage() {
     );
   };
 
+  // --- Crear empresa inline (desde modal contacto) ---
+  const handleCreateEmpresaInline = async () => {
+    try {
+      const values = await empresaForm.validateFields();
+      setEmpresaSaving(true);
+      const nueva = await empresasApi.create(values);
+      setEmpresas((prev) => [...prev, nueva]);
+      // Auto-seleccionar la nueva empresa en el form de contacto
+      contactoForm.setFieldValue('empresa_id', nueva.id);
+      setEmpresaModalOpen(false);
+      empresaForm.resetFields();
+      message.success('Empresa creada');
+    } catch (err) {
+      if (err.response) {
+        message.error(err.response.data?.detail || 'Error al crear empresa');
+      }
+    } finally {
+      setEmpresaSaving(false);
+    }
+  };
+
+  // --- Crear contacto inline (para participantes) ---
+  const handleCreateContactoInline = async () => {
+    try {
+      const values = await contactoForm.validateFields();
+      setContactoSaving(true);
+      const nuevo = await contactosApi.create(values);
+      setContactos((prev) => [...prev, nuevo]);
+      // Auto-seleccionar el nuevo contacto en participante_ids
+      const current = form.getFieldValue('participante_ids') || [];
+      form.setFieldValue('participante_ids', [...current, nuevo.id]);
+      setContactoModalOpen(false);
+      contactoForm.resetFields();
+      message.success('Contacto creado');
+    } catch (err) {
+      if (err.response) {
+        message.error(err.response.data?.detail || 'Error al crear contacto');
+      }
+    } finally {
+      setContactoSaving(false);
+    }
+  };
+
   // --- Modal crear/editar ACCION ---
   const openCreateAccion = (date) => {
     setEditingAccion(null);
@@ -214,6 +271,8 @@ export default function CalendarioPage() {
       fecha_hora: dayjs(accion.fecha_hora),
       todo_el_dia: accion.todo_el_dia || false,
       tipo_otro: accion.tipo_otro || '',
+      enlace_videollamada: accion.enlace_videollamada || '',
+      participante_ids: (accion.participantes || []).map((p) => p.id),
     });
     setModalOpen(true);
     setDrawerAccion(null);
@@ -234,6 +293,8 @@ export default function CalendarioPage() {
         ...values,
         fecha_hora: fechaHora.toISOString(),
         tipo_otro: values.tipo === 'OTRO' ? values.tipo_otro : null,
+        enlace_videollamada: values.tipo === 'VIDEOLLAMADA' ? values.enlace_videollamada : null,
+        participante_ids: values.participante_ids || [],
       };
       if (editingAccion) {
         await accionesApi.update(editingAccion.id, payload);
@@ -264,6 +325,17 @@ export default function CalendarioPage() {
       fetchData(currentMonth);
     } catch {
       message.error('Error al eliminar');
+    }
+  };
+
+  const handleQuickEstado = async (accionId, nuevoEstado) => {
+    try {
+      await accionesApi.update(accionId, { estado: nuevoEstado });
+      message.success(`Accion marcada como ${nuevoEstado}`);
+      setDrawerAccion(null);
+      fetchData(currentMonth);
+    } catch {
+      message.error('Error al cambiar estado');
     }
   };
 
@@ -534,9 +606,155 @@ export default function CalendarioPage() {
             </Form.Item>
           )}
 
+          {tipoWatch === 'VIDEOLLAMADA' && (
+            <Form.Item
+              name="enlace_videollamada"
+              label="Enlace de videollamada"
+              rules={[{ required: true, message: 'Pega el link de la videollamada' }]}
+            >
+              <Input
+                prefix={<LinkOutlined />}
+                placeholder="https://meet.google.com/... o https://zoom.us/..."
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item name="participante_ids" label="Participantes">
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="Buscar contacto por nombre o empresa..."
+              optionFilterProp="label"
+              options={(() => {
+                // Agrupar contactos por empresa
+                const porEmpresa = {};
+                contactos.forEach((c) => {
+                  const emp = empresas.find((e) => e.id === c.empresa_id);
+                  const empNombre = emp ? (emp.razon_social || emp.nombre || '').toUpperCase() : 'SIN EMPRESA';
+                  if (!porEmpresa[empNombre]) porEmpresa[empNombre] = [];
+                  porEmpresa[empNombre].push(c);
+                });
+                // Convertir a optgroup format, ordenado por empresa
+                return Object.keys(porEmpresa)
+                  .sort((a, b) => a.localeCompare(b))
+                  .map((empNombre) => ({
+                    label: empNombre,
+                    options: porEmpresa[empNombre]
+                      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
+                      .map((c) => ({
+                        label: `${(c.nombre || '').toUpperCase()}${c.cargo ? ` (${c.cargo})` : ''}`,
+                        value: c.id,
+                      })),
+                  }));
+              })()}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider style={{ margin: '8px 0' }} />
+                  <Button
+                    type="text"
+                    icon={<PlusOutlined />}
+                    style={{ width: '100%' }}
+                    onClick={() => {
+                      contactoForm.resetFields();
+                      setContactoModalOpen(true);
+                    }}
+                  >
+                    Crear nuevo contacto
+                  </Button>
+                </>
+              )}
+            />
+          </Form.Item>
+
           <Form.Item name="descripcion" label="Descripcion">
             <Input.TextArea rows={3} />
           </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal crear contacto inline */}
+      <Modal
+        title="Crear Nuevo Contacto"
+        open={contactoModalOpen}
+        onOk={handleCreateContactoInline}
+        onCancel={() => setContactoModalOpen(false)}
+        confirmLoading={contactoSaving}
+        okText="Crear"
+        cancelText="Cancelar"
+        destroyOnHidden
+      >
+        <Form form={contactoForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="nombre" label="Nombre" rules={[{ required: true, message: 'El nombre es requerido' }]}>
+            <Input placeholder="Nombre y apellido" />
+          </Form.Item>
+          <Form.Item name="empresa_id" label="Empresa" rules={[{ required: true, message: 'Selecciona una empresa' }]}>
+            <Select
+              showSearch
+              placeholder="Selecciona empresa"
+              optionFilterProp="label"
+              options={toEntityOptions(empresas)}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider style={{ margin: '8px 0' }} />
+                  <Button
+                    type="text"
+                    icon={<PlusOutlined />}
+                    style={{ width: '100%' }}
+                    onClick={() => {
+                      empresaForm.resetFields();
+                      empresaForm.setFieldsValue({ origen: 'WEB' });
+                      setEmpresaModalOpen(true);
+                    }}
+                  >
+                    Crear nueva empresa
+                  </Button>
+                </>
+              )}
+            />
+          </Form.Item>
+          <Space style={{ width: '100%' }} size="middle">
+            <Form.Item name="email" label="Email" style={{ flex: 1 }}>
+              <Input placeholder="email@ejemplo.com" />
+            </Form.Item>
+            <Form.Item name="telefono" label="Telefono" style={{ flex: 1 }}>
+              <Input placeholder="+34 600 00 00 00" />
+            </Form.Item>
+          </Space>
+          <Form.Item name="cargo" label="Cargo">
+            <Input placeholder="Ej: Director comercial" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal crear empresa inline (desde modal contacto) */}
+      <Modal
+        title="Crear Nueva Empresa"
+        open={empresaModalOpen}
+        onOk={handleCreateEmpresaInline}
+        onCancel={() => setEmpresaModalOpen(false)}
+        confirmLoading={empresaSaving}
+        okText="Crear"
+        cancelText="Cancelar"
+        destroyOnHidden
+      >
+        <Form form={empresaForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="nombre" label="Nombre" rules={[{ required: true, message: 'El nombre es requerido' }]}>
+            <Input placeholder="Nombre de la empresa" />
+          </Form.Item>
+          <Form.Item name="origen" label="Origen" rules={[{ required: true }]}>
+            <Select options={toOptions(ORIGEN_EMPRESA)} />
+          </Form.Item>
+          <Space style={{ width: '100%' }} size="middle">
+            <Form.Item name="ciudad" label="Ciudad" style={{ flex: 1 }}>
+              <Input placeholder="Ciudad" />
+            </Form.Item>
+            <Form.Item name="provincia" label="Provincia" style={{ flex: 1 }}>
+              <Input placeholder="Provincia" />
+            </Form.Item>
+          </Space>
         </Form>
       </Modal>
 
@@ -585,7 +803,43 @@ export default function CalendarioPage() {
         onClose={() => setDrawerAccion(null)}
         size="default"
         extra={
+          drawerAccion && (
           <Space>
+            {drawerAccion.estado === 'PENDIENTE' && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                  onClick={() => handleQuickEstado(drawerAccion.id, 'FINALIZADA')}
+                >
+                  Finalizar
+                </Button>
+                <Button
+                  danger
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => handleQuickEstado(drawerAccion.id, 'ANULADA')}
+                >
+                  Anular
+                </Button>
+              </>
+            )}
+            {drawerAccion.estado === 'FINALIZADA' && (
+              <Button
+                icon={<UndoOutlined />}
+                onClick={() => handleQuickEstado(drawerAccion.id, 'PENDIENTE')}
+              >
+                Reactivar
+              </Button>
+            )}
+            {drawerAccion.estado === 'ANULADA' && (
+              <Button
+                icon={<UndoOutlined />}
+                onClick={() => handleQuickEstado(drawerAccion.id, 'PENDIENTE')}
+              >
+                Reactivar
+              </Button>
+            )}
             <Button icon={<EditOutlined />} onClick={() => openEditAccion(drawerAccion)}>
               Editar
             </Button>
@@ -596,6 +850,7 @@ export default function CalendarioPage() {
               <Button danger icon={<DeleteOutlined />}>Eliminar</Button>
             </Popconfirm>
           </Space>
+          )
         }
       >
         {drawerAccion && (
@@ -623,6 +878,24 @@ export default function CalendarioPage() {
                 </span>
               ) : '-'}
             </Descriptions.Item>
+            {drawerAccion.enlace_videollamada && (
+              <Descriptions.Item label="Enlace videollamada">
+                <a href={drawerAccion.enlace_videollamada} target="_blank" rel="noopener noreferrer">
+                  <VideoCameraOutlined /> {drawerAccion.enlace_videollamada}
+                </a>
+              </Descriptions.Item>
+            )}
+            {drawerAccion.participantes && drawerAccion.participantes.length > 0 && (
+              <Descriptions.Item label="Participantes">
+                {drawerAccion.participantes.map((p) => (
+                  <div key={p.id} style={{ marginBottom: 4 }}>
+                    <Typography.Text strong>{p.nombre}</Typography.Text>
+                    {p.email && <Typography.Text type="secondary"> — {p.email}</Typography.Text>}
+                    {p.telefono && <Typography.Text type="secondary"> — {p.telefono}</Typography.Text>}
+                  </div>
+                ))}
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Descripcion">
               {drawerAccion.descripcion || '-'}
             </Descriptions.Item>

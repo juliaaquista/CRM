@@ -28,6 +28,7 @@ export const TIPO_ACCION = {
   LLAMADA: 'LLAMADA',
   VISITA: 'VISITA',
   SEGUIMIENTO: 'SEGUIMIENTO',
+  VIDEOLLAMADA: 'VIDEOLLAMADA',
   OTRO: 'OTRO',
 };
 
@@ -47,6 +48,7 @@ export const TIPO_ACCION_COLOR = {
   LLAMADA: 'blue',
   VISITA: 'green',
   SEGUIMIENTO: 'cyan',
+  VIDEOLLAMADA: 'purple',
   OTRO: 'default',
 };
 

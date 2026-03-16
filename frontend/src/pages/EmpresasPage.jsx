@@ -209,11 +209,25 @@ export default function EmpresasPage() {
       sorter: (a, b) => a.nombre.localeCompare(b.nombre),
       render: (val) => <span style={{ textTransform: 'uppercase' }}>{val}</span>,
     },
-    { title: 'Ciudad', dataIndex: 'ciudad' },
-    { title: 'Provincia', dataIndex: 'provincia' },
+    {
+      title: 'Ciudad', dataIndex: 'ciudad',
+      sorter: (a, b) => (a.ciudad || '').localeCompare(b.ciudad || ''),
+    },
+    {
+      title: 'Provincia', dataIndex: 'provincia',
+      sorter: (a, b) => (a.provincia || '').localeCompare(b.provincia || ''),
+    },
     {
       title: 'Razon Social', dataIndex: 'razon_social', ellipsis: true,
+      sorter: (a, b) => (a.razon_social || '').localeCompare(b.razon_social || ''),
       render: (val) => <span style={{ textTransform: 'uppercase' }}>{val || '-'}</span>,
+    },
+    {
+      title: 'Comercial',
+      dataIndex: 'comerciales_nombres',
+      ellipsis: true,
+      render: (val) => val || '-',
+      sorter: (a, b) => (a.comerciales_nombres || '').localeCompare(b.comerciales_nombres || ''),
     },
     {
       title: 'Origen',
@@ -230,14 +244,18 @@ export default function EmpresasPage() {
     },
     {
       title: 'Acciones',
-      width: 150,
+      width: isJefe ? 150 : 60,
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/empresas/${record.id}`)} />
-          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
-          <Popconfirm title="Eliminar empresa?" onConfirm={() => handleDelete(record.id)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {isJefe && (
+            <>
+              <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+              <Popconfirm title="Eliminar empresa?" onConfirm={() => handleDelete(record.id)}>
+                <Button size="small" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            </>
+          )}
         </Space>
       ),
     },

@@ -12,6 +12,8 @@ class Contacto(Base):
     cargo = Column(String)
     email = Column(String)
     telefono = Column(String)
+    telefono2 = Column(String)
+    extension = Column(String)
     sucursal = Column(String)
 
     empresa = relationship("Empresa", back_populates="contactos")

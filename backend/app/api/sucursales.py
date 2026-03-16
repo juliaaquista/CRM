@@ -14,11 +14,11 @@ router = APIRouter(prefix="/api/empresas/{empresa_id}/sucursales", tags=["Sucurs
 router_global = APIRouter(prefix="/api/sucursales", tags=["Sucursales"])
 
 
-def _get_empresa_or_404(db: Session, empresa_id: int, user: Usuario) -> Empresa:
+def _get_empresa_or_404(db: Session, empresa_id: int, user: Usuario, solo_lectura: bool = False) -> Empresa:
     empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
     if not empresa:
         raise HTTPException(status_code=404, detail="Empresa no encontrada")
-    verificar_acceso_empresa(db, empresa, user)
+    verificar_acceso_empresa(db, empresa, user, solo_lectura=solo_lectura)
     return empresa
 
 
@@ -28,7 +28,7 @@ def listar_sucursales(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user),
 ):
-    _get_empresa_or_404(db, empresa_id, current_user)
+    _get_empresa_or_404(db, empresa_id, current_user, solo_lectura=True)
     return db.query(Sucursal).filter(Sucursal.empresa_id == empresa_id).order_by(Sucursal.nombre).all()
 
 

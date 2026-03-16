@@ -9,6 +9,7 @@ class TipoAccionEnum(str, enum.Enum):
     LLAMADA = "LLAMADA"
     VISITA = "VISITA"
     SEGUIMIENTO = "SEGUIMIENTO"
+    VIDEOLLAMADA = "VIDEOLLAMADA"
     OTRO = "OTRO"
 
 
@@ -16,6 +17,14 @@ class EstadoAccionEnum(str, enum.Enum):
     PENDIENTE = "PENDIENTE"
     FINALIZADA = "FINALIZADA"
     ANULADA = "ANULADA"
+
+
+class AccionParticipante(Base):
+    __tablename__ = "accion_participantes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    accion_id = Column(Integer, ForeignKey("acciones.id", ondelete="CASCADE"), nullable=False)
+    contacto_id = Column(Integer, ForeignKey("contactos.id", ondelete="CASCADE"), nullable=False)
 
 
 class Accion(Base):
@@ -31,6 +40,7 @@ class Accion(Base):
     todo_el_dia = Column(Boolean, default=False)
     duracion_minutos = Column(Integer, default=60)
     descripcion = Column(String)
+    enlace_videollamada = Column(String, nullable=True)
     es_resumida = Column(Boolean, default=False)
     nombre_cliente_resumida = Column(String, nullable=True)
     creado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
@@ -39,3 +49,4 @@ class Accion(Base):
     empresa = relationship("Empresa", back_populates="acciones")
     contacto = relationship("Contacto", back_populates="acciones")
     creado_por = relationship("Usuario")
+    participantes = relationship("Contacto", secondary="accion_participantes")

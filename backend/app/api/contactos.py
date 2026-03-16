@@ -27,7 +27,7 @@ def listar_contactos(
     empresa_id: int | None = None,
     q: str | None = Query(None, description="Buscar por nombre, email o cargo"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user),
 ):

@@ -25,7 +25,7 @@ export default function EmpresaDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
-  const { isJefe } = useAuth();
+  const { isJefe, user } = useAuth();
 
   const [empresa, setEmpresa] = useState(null);
   const [contactos, setContactos] = useState([]);
@@ -62,30 +62,38 @@ export default function EmpresaDetallePage() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [emp, accRes, ofRes] = await Promise.all([
+      // Primero cargamos empresa + comerciales para saber si el usuario está asignado
+      const [emp, comercialesData] = await Promise.all([
         empresasApi.getById(id),
-        accionesApi.list({ empresa_id: id, limit: 100 }),
-        ofertasApi.list({ empresa_id: id, limit: 100 }),
-      ]);
-      setEmpresa(emp);
-      setAcciones(accRes.items);
-      setOfertas(ofRes.items);
-      const [contRes, archivosData, sucursalesData, comercialesData] = await Promise.all([
-        contactosApi.list({ empresa_id: id, limit: 100 }),
-        empresasApi.listArchivos(id),
-        sucursalesApi.listByEmpresa(id),
         empresasApi.listComerciales(id),
       ]);
-      setContactos(contRes.items);
-      setArchivos(archivosData);
-      setSucursales(sucursalesData);
+      setEmpresa(emp);
       setComerciales(comercialesData);
 
-      // Cargar usuarios para el selector de compartir (solo jefe)
-      try {
-        const usrs = await authApi.listUsuarios();
-        setUsuarios(usrs);
-      } catch { /* silent - no es jefe */ }
+      // Determinar si el usuario tiene acceso completo
+      const tieneAcceso = isJefe || comercialesData.some((c) => c.comercial_id === user?.id);
+
+      if (tieneAcceso) {
+        // Solo cargar datos detallados si es asignado o jefe
+        const [contRes, accRes, ofRes, archivosData, sucursalesData] = await Promise.all([
+          contactosApi.list({ empresa_id: id, limit: 100 }),
+          accionesApi.list({ empresa_id: id, limit: 100 }),
+          ofertasApi.list({ empresa_id: id, limit: 100 }),
+          empresasApi.listArchivos(id),
+          sucursalesApi.listByEmpresa(id),
+        ]);
+        setContactos(contRes.items);
+        setAcciones(accRes.items);
+        setOfertas(ofRes.items);
+        setArchivos(archivosData);
+        setSucursales(sucursalesData);
+
+        // Cargar usuarios para el selector de compartir (solo jefe)
+        try {
+          const usrs = await authApi.listUsuarios();
+          setUsuarios(usrs);
+        } catch { /* silent - no es jefe */ }
+      }
     } catch {
       message.error('Error al cargar empresa');
     } finally {
@@ -302,11 +310,16 @@ export default function EmpresaDetallePage() {
     return <p>Empresa no encontrada</p>;
   }
 
+  // Determinar si el usuario actual está asignado a esta empresa (titular o compartido)
+  const isAsignado = isJefe || comerciales.some((c) => c.comercial_id === user?.id);
+
   const contactoColumns = [
     { title: 'Nombre', dataIndex: 'nombre' },
     { title: 'Cargo', dataIndex: 'cargo' },
     { title: 'Email', dataIndex: 'email' },
     { title: 'Telefono', dataIndex: 'telefono', render: (val) => val ? formatPhone(val) : '-' },
+    { title: 'Telefono 2', dataIndex: 'telefono2', render: (val) => val ? formatPhone(val) : '-' },
+    { title: 'Extension', dataIndex: 'extension', render: (val) => val || '-' },
     { title: 'Sucursal', dataIndex: 'sucursal' },
     {
       title: '', width: 100,
@@ -393,14 +406,20 @@ export default function EmpresaDetallePage() {
           <Tag>{empresa.origen}</Tag>
           {empresa.origen_detalle && <span style={{ marginLeft: 4, fontSize: 12, color: '#666' }}>({empresa.origen_detalle})</span>}
         </Descriptions.Item>
+        <Descriptions.Item label="Comercial">
+          {comerciales.filter((c) => c.tipo === 'TITULAR').map((c) => c.comercial_nombre).join(', ') || '-'}
+        </Descriptions.Item>
         <Descriptions.Item label="Creada">
           {empresa.creado_en ? dayjs(empresa.creado_en).format('DD/MM/YYYY') : '-'}
         </Descriptions.Item>
-        <Descriptions.Item label="Notas" span={2}>
-          {empresa.notas_comerciales || '-'}
-        </Descriptions.Item>
+        {isAsignado && (
+          <Descriptions.Item label="Notas" span={2}>
+            {empresa.notas_comerciales || '-'}
+          </Descriptions.Item>
+        )}
       </Descriptions>
 
+      {isAsignado ? (
       <Tabs
         defaultActiveKey="contactos"
         items={[
@@ -457,17 +476,19 @@ export default function EmpresaDetallePage() {
             ),
             children: (
               <>
-                <div style={{ marginBottom: 12, textAlign: 'right' }}>
-                  <Upload
-                    beforeUpload={handleUploadArchivo}
-                    showUploadList={false}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar"
-                  >
-                    <Button icon={<UploadOutlined />} loading={uploading}>
-                      Subir Archivo
-                    </Button>
-                  </Upload>
-                </div>
+                {isAsignado && (
+                  <div style={{ marginBottom: 12, textAlign: 'right' }}>
+                    <Upload
+                      beforeUpload={handleUploadArchivo}
+                      showUploadList={false}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar"
+                    >
+                      <Button icon={<UploadOutlined />} loading={uploading}>
+                        Subir Archivo
+                      </Button>
+                    </Upload>
+                  </div>
+                )}
                 <Table
                   dataSource={archivos}
                   rowKey="id"
@@ -485,7 +506,7 @@ export default function EmpresaDetallePage() {
                       render: (val) => val ? dayjs(val).format('DD/MM/YYYY') : '-',
                     },
                     {
-                      title: '', width: 100,
+                      title: '', width: isAsignado ? 100 : 50,
                       render: (_, record) => (
                         <Space>
                           <Button
@@ -493,12 +514,14 @@ export default function EmpresaDetallePage() {
                             icon={<DownloadOutlined />}
                             onClick={() => handleDescargarArchivo(record)}
                           />
-                          <Popconfirm
-                            title="Eliminar archivo?"
-                            onConfirm={() => handleEliminarArchivo(record.id)}
-                          >
-                            <Button size="small" danger icon={<DeleteOutlined />} />
-                          </Popconfirm>
+                          {isAsignado && (
+                            <Popconfirm
+                              title="Eliminar archivo?"
+                              onConfirm={() => handleEliminarArchivo(record.id)}
+                            >
+                              <Button size="small" danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
+                          )}
                         </Space>
                       ),
                     },
@@ -512,11 +535,13 @@ export default function EmpresaDetallePage() {
             label: `Sucursales (${sucursales.length})`,
             children: (
               <>
-                <div style={{ marginBottom: 12, textAlign: 'right' }}>
-                  <Button size="small" icon={<PlusOutlined />} onClick={openCreateSucursal}>
-                    Nueva Sucursal
-                  </Button>
-                </div>
+                {isAsignado && (
+                  <div style={{ marginBottom: 12, textAlign: 'right' }}>
+                    <Button size="small" icon={<PlusOutlined />} onClick={openCreateSucursal}>
+                      Nueva Sucursal
+                    </Button>
+                  </div>
+                )}
                 <Table
                   dataSource={sucursales}
                   rowKey="id"
@@ -531,7 +556,7 @@ export default function EmpresaDetallePage() {
                       title: 'Coords', width: 80,
                       render: (_, r) => r.latitud ? '✓' : '-',
                     },
-                    {
+                    ...(isAsignado ? [{
                       title: '', width: 100,
                       render: (_, record) => (
                         <Space>
@@ -541,7 +566,7 @@ export default function EmpresaDetallePage() {
                           </Popconfirm>
                         </Space>
                       ),
-                    },
+                    }] : []),
                   ]}
                 />
               </>
@@ -554,18 +579,20 @@ export default function EmpresaDetallePage() {
             ),
             children: (
               <>
-                <div style={{ marginBottom: 12, textAlign: 'right' }}>
-                  <Space>
-                    {isJefe && (
-                      <Button size="small" icon={<UserAddOutlined />} onClick={openAsignar}>
-                        Asignar comercial
+                {isAsignado && (
+                  <div style={{ marginBottom: 12, textAlign: 'right' }}>
+                    <Space>
+                      {isJefe && (
+                        <Button size="small" icon={<UserAddOutlined />} onClick={openAsignar}>
+                          Asignar comercial
+                        </Button>
+                      )}
+                      <Button size="small" icon={<ShareAltOutlined />} onClick={openCompartir}>
+                        Compartir cliente
                       </Button>
-                    )}
-                    <Button size="small" icon={<ShareAltOutlined />} onClick={openCompartir}>
-                      Compartir cliente
-                    </Button>
-                  </Space>
-                </div>
+                    </Space>
+                  </div>
+                )}
                 <Table
                   dataSource={comerciales}
                   rowKey="id"
@@ -613,6 +640,13 @@ export default function EmpresaDetallePage() {
           },
         ]}
       />
+      ) : (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          <TeamOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+          <p>No tienes acceso a la información detallada de esta empresa.<br />
+          Contacta al comercial asignado o a tu jefe si necesitas más datos.</p>
+        </div>
+      )}
 
       {/* Modal sucursal */}
       <Modal
@@ -672,6 +706,18 @@ export default function EmpresaDetallePage() {
                 if (val) contactoForm.setFieldValue('telefono', formatPhone(val));
               }}
             />
+          </Form.Item>
+          <Form.Item name="telefono2" label="Telefono 2">
+            <Input
+              placeholder="+34 600 00 00 00"
+              onBlur={() => {
+                const val = contactoForm.getFieldValue('telefono2');
+                if (val) contactoForm.setFieldValue('telefono2', formatPhone(val));
+              }}
+            />
+          </Form.Item>
+          <Form.Item name="extension" label="Extension">
+            <Input placeholder="Ej: 123" />
           </Form.Item>
           <Form.Item name="sucursal" label="Sucursal">
             <Input />

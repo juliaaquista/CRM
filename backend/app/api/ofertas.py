@@ -60,7 +60,7 @@ def listar_ofertas(
         empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
         if not empresa:
             raise HTTPException(status_code=404, detail="Empresa no encontrada")
-        verificar_acceso_empresa(db, empresa, current_user)
+        verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
         query = query.filter(Oferta.empresa_id == empresa_id)
     elif current_user.rol == RolEnum.COMERCIAL:
         emp_ids = [r[0] for r in db.query(EmpresaComercial.empresa_id).filter(
@@ -130,7 +130,7 @@ def obtener_oferta(
     if not oferta:
         raise HTTPException(status_code=404, detail="Oferta no encontrada")
     empresa = db.query(Empresa).filter(Empresa.id == oferta.empresa_id).first()
-    verificar_acceso_empresa(db, empresa, current_user)
+    verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
     return oferta
 
 

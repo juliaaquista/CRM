@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_active_user
 from app.models.empresa import Empresa
 from app.models.accion import Accion
+from app.models.contacto import Contacto
 from app.models.empresa_comercial import EmpresaComercial
 from app.models.usuario import Usuario, RolEnum
 from app.schemas.accion import AccionCreate, AccionUpdate, AccionResponse
@@ -30,7 +31,7 @@ def listar_acciones(
         empresa = db.query(Empresa).filter(Empresa.id == empresa_id).first()
         if not empresa:
             raise HTTPException(status_code=404, detail="Empresa no encontrada")
-        verificar_acceso_empresa(db, empresa, current_user)
+        verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
         query = query.filter(Accion.empresa_id == empresa_id)
     elif contacto_id:
         query = query.filter(Accion.contacto_id == contacto_id)
@@ -53,7 +54,7 @@ def acciones_calendario(
     current_user: Usuario = Depends(get_current_active_user),
 ):
     """Endpoint optimizado para el calendario. Devuelve acciones en un rango de fechas."""
-    query = db.query(Accion).options(joinedload(Accion.empresa))
+    query = db.query(Accion).options(joinedload(Accion.empresa), joinedload(Accion.participantes))
     if current_user.rol == RolEnum.COMERCIAL:
         emp_ids = [r[0] for r in db.query(EmpresaComercial.empresa_id).filter(
             EmpresaComercial.comercial_id == current_user.id).all()]
@@ -79,7 +80,7 @@ def obtener_accion(
         raise HTTPException(status_code=404, detail="Accion no encontrada")
     if accion.empresa_id:
         empresa = db.query(Empresa).filter(Empresa.id == accion.empresa_id).first()
-        verificar_acceso_empresa(db, empresa, current_user)
+        verificar_acceso_empresa(db, empresa, current_user, solo_lectura=True)
     elif accion.creado_por_id != current_user.id and current_user.rol != RolEnum.JEFE:
         raise HTTPException(status_code=403, detail="No tienes acceso a esta accion")
     return accion
@@ -96,9 +97,14 @@ def crear_accion(
         if not empresa:
             raise HTTPException(status_code=404, detail="Empresa no encontrada")
         verificar_acceso_empresa(db, empresa, current_user)
-    accion = Accion(**data.model_dump(), creado_por_id=current_user.id)
+    participante_ids = data.participante_ids or []
+    accion_data = data.model_dump(exclude={"participante_ids"})
+    accion = Accion(**accion_data, creado_por_id=current_user.id)
     db.add(accion)
     db.flush()
+    if participante_ids:
+        contactos = db.query(Contacto).filter(Contacto.id.in_(participante_ids)).all()
+        accion.participantes = contactos
     registrar_cambio(db, current_user.id, "CREAR", "accion", accion.id, f"Accion {data.tipo}")
     db.commit()
     db.refresh(accion)
@@ -119,6 +125,10 @@ def actualizar_accion(
     if accion.creado_por_id != current_user.id and current_user.rol != RolEnum.JEFE:
         raise HTTPException(status_code=403, detail="Solo puedes editar tus propias acciones")
     cambios = data.model_dump(exclude_unset=True)
+    participante_ids = cambios.pop("participante_ids", None)
+    if participante_ids is not None:
+        contactos = db.query(Contacto).filter(Contacto.id.in_(participante_ids)).all()
+        accion.participantes = contactos
     for field, value in cambios.items():
         setattr(accion, field, value)
     registrar_cambio(db, current_user.id, "EDITAR", "accion", accion.id, str(cambios))

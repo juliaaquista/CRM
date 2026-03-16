@@ -12,6 +12,8 @@ class AccionCreate(BaseModel):
     todo_el_dia: bool = False
     duracion_minutos: int = 60
     descripcion: str | None = None
+    enlace_videollamada: str | None = None
+    participante_ids: list[int] | None = None
     es_resumida: bool = False
     nombre_cliente_resumida: str | None = None
 
@@ -24,6 +26,18 @@ class AccionUpdate(BaseModel):
     todo_el_dia: bool | None = None
     duracion_minutos: int | None = None
     descripcion: str | None = None
+    enlace_videollamada: str | None = None
+    participante_ids: list[int] | None = None
+
+
+class ParticipanteResponse(BaseModel):
+    id: int
+    nombre: str
+    email: str | None = None
+    telefono: str | None = None
+    empresa_id: int
+
+    model_config = {"from_attributes": True}
 
 
 class AccionResponse(BaseModel):
@@ -37,11 +51,13 @@ class AccionResponse(BaseModel):
     todo_el_dia: bool = False
     duracion_minutos: int
     descripcion: str | None
+    enlace_videollamada: str | None = None
     es_resumida: bool
     nombre_cliente_resumida: str | None
     creado_por_id: int
     creado_en: datetime | None
     empresa_razon_social: str | None = None
+    participantes: list[ParticipanteResponse] = []
 
     model_config = {"from_attributes": True}
 
