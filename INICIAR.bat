@@ -9,10 +9,11 @@ echo       ABISYSA CRM - INICIANDO
 echo  ============================================
 echo.
 
+set "BASEDIR=%~dp0"
+
 :: Iniciar backend
 echo  Iniciando servidor backend...
-cd /d "%~dp0backend"
-start "Abisysa CRM - Backend" /min cmd /c "venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload"
+start "Abisysa CRM - Backend" /min cmd /c "cd /d "%BASEDIR%backend" && "%BASEDIR%backend\venv\Scripts\python.exe" -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload"
 
 :: Esperar a que el backend arranque
 echo  Esperando al backend...
@@ -20,8 +21,7 @@ timeout /t 4 /nobreak >nul
 
 :: Iniciar frontend
 echo  Iniciando interfaz web...
-cd /d "%~dp0frontend"
-start "Abisysa CRM - Frontend" /min cmd /c "npm run dev"
+start "Abisysa CRM - Frontend" /min cmd /c "cd /d "%BASEDIR%frontend" && npm run dev"
 
 :: Esperar a que el frontend arranque
 echo  Esperando a la interfaz...
