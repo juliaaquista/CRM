@@ -1,5 +1,25 @@
+# === Python ===
 venv/
 __pycache__/
 *.pyc
+*.pyo
+
+# === Node ===
+node_modules/
+dist/
+
+# === Datos sensibles ===
 .env
+.env.local
+.env.production
+
+# === Datos locales ===
 data/
+
+# === OS / IDE ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.sw?
+.claude/

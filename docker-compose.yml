@@ -44,5 +44,27 @@ services:
     ports:
       - "80:80"
 
+  # =========================================================================
+  # Servicio de Backup Automático
+  # Ejecuta pg_dump + backup de uploads diariamente a las 2:00 AM
+  # Mantiene los últimos 30 días de backups
+  # =========================================================================
+  backup:
+    build: ./backup
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-crm_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_password123}
+      POSTGRES_DB: ${POSTGRES_DB:-crm_db}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 2 * * *}"
+      RETENTION_DAYS: "${RETENTION_DAYS:-30}"
+    volumes:
+      - ./data/backups:/backups
+      - uploads:/app/uploads:ro
+
 volumes:
   uploads:

@@ -115,7 +115,7 @@ export default function AppLayout() {
           margin: '8px 0',
         }}>
           <Text strong style={{ color: '#fff', fontSize: collapsed ? 14 : 18 }}>
-            {collapsed ? 'CRM' : 'CRM Abisysa'}
+            {collapsed ? 'CRM' : 'Abisysa CRM'}
           </Text>
         </div>
         <SiderMenu />

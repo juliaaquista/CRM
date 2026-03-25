@@ -36,7 +36,7 @@ export default function LoginPage() {
     }}>
       <Card style={{ width: 380, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={3} style={{ marginBottom: 4 }}>CRM Abisysa</Title>
+          <Title level={3} style={{ marginBottom: 4 }}>Abisysa CRM</Title>
           <Typography.Text type="secondary">Inicia sesion para continuar</Typography.Text>
         </div>
 
