@@ -162,7 +162,7 @@ def crear_empresa(
     empresa = Empresa(**data.model_dump())
     # Geocodificar (no-bloqueante: si falla, la empresa se crea igual)
     try:
-        lat, lon = geocode_ciudad(empresa.ciudad, empresa.provincia)
+        lat, lon = geocode_ciudad(empresa.ciudad, empresa.provincia, empresa.direccion)
         empresa.latitud = lat
         empresa.longitud = lon
     except Exception:
@@ -190,12 +190,12 @@ def actualizar_empresa(
         raise HTTPException(status_code=404, detail="Empresa no encontrada")
     verificar_acceso_empresa(db, empresa, current_user)
     cambios = data.model_dump(exclude_unset=True)
-    # Re-geocodificar si cambia ciudad o provincia
-    ciudad_cambia = "ciudad" in cambios or "provincia" in cambios
+    # Re-geocodificar si cambia direccion, ciudad o provincia
+    ubicacion_cambia = "direccion" in cambios or "ciudad" in cambios or "provincia" in cambios
     for field, value in cambios.items():
         setattr(empresa, field, value)
-    if ciudad_cambia:
-        lat, lon = geocode_ciudad(empresa.ciudad, empresa.provincia)
+    if ubicacion_cambia:
+        lat, lon = geocode_ciudad(empresa.ciudad, empresa.provincia, empresa.direccion)
         empresa.latitud = lat
         empresa.longitud = lon
     registrar_cambio(db, current_user.id, "EDITAR", "empresa", empresa.id, str(cambios))

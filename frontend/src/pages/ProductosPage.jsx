@@ -125,7 +125,13 @@ export default function ProductosPage() {
 
   const columns = [
     { title: 'Nombre', dataIndex: 'nombre', sorter: (a, b) => a.nombre.localeCompare(b.nombre), render: (val) => <span style={{ textTransform: 'uppercase' }}>{val}</span> },
-    { title: 'Categoria', dataIndex: 'categoria', render: (val) => <span style={{ textTransform: 'uppercase' }}>{val || '-'}</span> },
+    {
+      title: 'Categoria', dataIndex: 'categoria',
+      sorter: (a, b) => (a.categoria || '').localeCompare(b.categoria || ''),
+      filters: categorias.map((c) => ({ text: c.toUpperCase(), value: c })),
+      onFilter: (value, record) => record.categoria === value,
+      render: (val) => <span style={{ textTransform: 'uppercase' }}>{val || '-'}</span>,
+    },
     { title: 'Descripcion', dataIndex: 'descripcion', ellipsis: true },
     {
       title: 'Ficha Tecnica',

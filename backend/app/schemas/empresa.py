@@ -5,6 +5,7 @@ from app.models.empresa import OrigenEmpresaEnum
 
 class EmpresaCreate(BaseModel):
     nombre: str
+    direccion: str | None = None
     ciudad: str | None = None
     provincia: str | None = None
     razon_social: str | None = None
@@ -15,6 +16,7 @@ class EmpresaCreate(BaseModel):
 
 class EmpresaUpdate(BaseModel):
     nombre: str | None = None
+    direccion: str | None = None
     ciudad: str | None = None
     provincia: str | None = None
     razon_social: str | None = None
@@ -26,6 +28,7 @@ class EmpresaUpdate(BaseModel):
 class EmpresaResponse(BaseModel):
     id: int
     nombre: str
+    direccion: str | None = None
     ciudad: str | None
     provincia: str | None
     razon_social: str | None

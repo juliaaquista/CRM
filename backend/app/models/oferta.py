@@ -18,6 +18,8 @@ class ModoPagoEnum(str, enum.Enum):
     EFECTIVO = "EFECTIVO"
     TRANSFERENCIA = "TRANSFERENCIA"
     CHEQUE = "CHEQUE"
+    RENTING = "RENTING"
+    LEASING = "LEASING"
 
 
 class Oferta(Base):

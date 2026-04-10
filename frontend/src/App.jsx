@@ -18,6 +18,7 @@ import UsuariosPage from './pages/UsuariosPage';
 import InformesPage from './pages/InformesPage';
 import DashboardPage from './pages/DashboardPage';
 import AuditLogPage from './pages/AuditLogPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 dayjs.locale('es');
 
@@ -27,16 +28,22 @@ export default function App() {
       token: {
         colorPrimary: '#13468A',
         colorLink: '#13468A',
+        colorInfo: '#13468A',
         borderRadius: 6,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       },
       components: {
         Layout: {
           siderBg: '#0a2a54',
+          headerBg: '#ffffff',
         },
         Menu: {
           darkItemBg: '#0a2a54',
           darkItemSelectedBg: '#13468A',
           darkItemHoverBg: '#0f3a72',
+        },
+        Button: {
+          fontWeight: 500,
         },
       },
     }}>
@@ -66,7 +73,7 @@ export default function App() {
                 <Route path="historial" element={<AuditLogPage />} />
               </Route>
 
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

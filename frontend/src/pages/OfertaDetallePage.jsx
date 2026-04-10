@@ -155,9 +155,12 @@ export default function OfertaDetallePage() {
         <Descriptions.Item label="Empresa">
           {empresa ? (
             <a onClick={() => navigate(`/empresas/${empresa.id}`)} style={{ textTransform: 'uppercase' }}>
-              {empresa.razon_social || empresa.nombre}
+              {empresa.nombre}
             </a>
           ) : '-'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Razon Social">
+          <span style={{ textTransform: 'uppercase' }}>{empresa?.razon_social || '-'}</span>
         </Descriptions.Item>
         <Descriptions.Item label="Estado">
           <Tag color={ESTADO_OFERTA_COLOR[oferta.estado]}>{oferta.estado}</Tag>

@@ -11,6 +11,7 @@ class OrigenEmpresaEnum(str, enum.Enum):
     RRSS = "RRSS"
     ABISYSA = "ABISYSA"
     REFERIDO = "REFERIDO"
+    PROSPECCION = "PROSPECCION"
     OTRO = "OTRO"
 
 
@@ -19,6 +20,7 @@ class Empresa(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
+    direccion = Column(String, nullable=True)
     ciudad = Column(String)
     provincia = Column(String)
     razon_social = Column(String, nullable=True)

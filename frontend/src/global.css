@@ -1,5 +1,70 @@
+/* ── Base ── */
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Transición suave al cambiar de página ── */
+@keyframes crm-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ant-layout-content > * {
+  animation: crm-fade-in 0.22s ease-out;
+}
+/* Respetá la preferencia del usuario si tiene reduced motion activado */
+@media (prefers-reduced-motion: reduce) {
+  .ant-layout-content > * {
+    animation: none;
+  }
+}
+
+/* ── Breadcrumbs clickeables ── */
+.ant-breadcrumb li:has(.crumb-clickable) {
+  cursor: pointer;
+}
+.ant-breadcrumb .crumb-clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.ant-breadcrumb .crumb-clickable:hover {
+  color: #13468A;
+}
+
+/* ── Header user dropdown hover ── */
+.user-dropdown-trigger:hover {
+  background-color: rgba(0,0,0,0.04);
+}
+
+/* ── Recent empresa cards en dashboard ── */
+.recent-card:hover {
+  border-color: #13468A !important;
+  background: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(19, 70, 138, 0.12);
+}
+
+/* ── Keyboard shortcut hint chip ── */
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-weight: 600;
+  color: #888;
+  background-color: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  line-height: 1;
+  user-select: none;
+  letter-spacing: 0.3px;
+}
+
 /* ── Responsive / Mobile ── */
-@media (max-width: 768px) {
+@media (max-width: 991px) {
   /* Reduce content padding on mobile */
   .ant-layout-content {
     padding: 12px !important;
@@ -11,9 +76,14 @@
     padding: 0 12px !important;
   }
 
-  /* Make global search narrower on mobile */
+  /* Make global search narrower on mobile/tablet */
   .ant-layout-header .ant-select-auto-complete {
-    width: 180px !important;
+    width: 200px !important;
+  }
+
+  /* Hide keyboard shortcut hints on mobile (there's no ctrl key) */
+  .kbd-hint {
+    display: none !important;
   }
 
   /* Tables scroll horizontally */

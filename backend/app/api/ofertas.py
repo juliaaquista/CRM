@@ -50,6 +50,8 @@ def listar_ofertas(
     empresa_id: int | None = None,
     q: str | None = Query(None, description="Buscar por empresa o notas"),
     estado: str | None = Query(None, description="Filtrar por estado"),
+    sort_by: str | None = Query(None, description="Campo a ordenar: numero, creado_en, producto"),
+    sort_order: str | None = Query("desc", description="Orden: asc | desc"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -75,7 +77,36 @@ def listar_ofertas(
     if estado:
         query = query.filter(Oferta.estado == estado)
     total = query.count()
-    items = query.order_by(Oferta.creado_en.desc()).offset(skip).limit(limit).all()
+
+    # Ordenamiento
+    desc_order = (sort_order or "desc").lower() != "asc"
+    if sort_by == "numero":
+        order_col = Oferta.numero.desc() if desc_order else Oferta.numero.asc()
+        query = query.order_by(order_col)
+    elif sort_by == "producto":
+        # Subquery: primer producto (alfabéticamente) de cada oferta
+        primer_prod_subq = (
+            db.query(
+                OfertaProducto.oferta_id.label("oferta_id"),
+                sa_func.min(Producto.nombre).label("primer_producto"),
+            )
+            .join(Producto, OfertaProducto.producto_id == Producto.id)
+            .group_by(OfertaProducto.oferta_id)
+            .subquery()
+        )
+        query = query.outerjoin(primer_prod_subq, Oferta.id == primer_prod_subq.c.oferta_id)
+        order_col = (
+            primer_prod_subq.c.primer_producto.desc()
+            if desc_order
+            else primer_prod_subq.c.primer_producto.asc()
+        )
+        query = query.order_by(order_col, Oferta.creado_en.desc())
+    else:
+        # Por defecto: creado_en
+        order_col = Oferta.creado_en.desc() if desc_order else Oferta.creado_en.asc()
+        query = query.order_by(order_col)
+
+    items = query.offset(skip).limit(limit).all()
     return {"items": items, "total": total}
 
 
@@ -110,6 +141,7 @@ def listar_ofertas_kanban(
             "numero": oferta.numero,
             "empresa_id": oferta.empresa_id,
             "empresa_nombre": oferta.empresa.nombre,
+            "empresa_razon_social": oferta.empresa.razon_social,
             "estado": oferta.estado.value if oferta.estado else None,
             "precio_negociado": oferta.precio_negociado,
             "notas": oferta.notas,

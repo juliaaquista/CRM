@@ -48,10 +48,15 @@ export default function KanbanCard({ item, isDragging, onClick }) {
         }}
         style={{ cursor: 'pointer' }}
       >
-        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#13468A' }}>
+        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, color: '#13468A' }}>
           <ShopOutlined style={{ marginRight: 4 }} />
           {item.empresa_nombre}
         </div>
+        {item.empresa_razon_social && item.empresa_razon_social !== item.empresa_nombre && (
+          <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>
+            {item.empresa_razon_social}
+          </div>
+        )}
 
         {productosLabel && (
           <div style={{ fontSize: 12, color: '#444', marginBottom: 4 }}>

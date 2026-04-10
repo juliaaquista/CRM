@@ -16,26 +16,32 @@ import * as contactosApi from '../api/contactos';
 import { ORIGEN_EMPRESA, toOptions } from '../constants/enums';
 import { useAuth } from '../context/AuthContext';
 import MapaEmpresas from '../components/empresas/MapaEmpresas';
+import EmptyState from '../components/layout/EmptyState';
+import TableSkeleton from '../components/layout/TableSkeleton';
+import { ShopOutlined } from '@ant-design/icons';
 import { formatPhone } from '../utils/phoneFormat';
+import usePersistedState from '../hooks/usePersistedState';
 
 const ORIGEN_COLOR = {
   WEB: 'blue', FERIAS: 'green', RRSS: 'purple',
-  ABISYSA: '#13468A', REFERIDO: 'cyan', OTRO: 'default',
+  ABISYSA: '#13468A', REFERIDO: 'cyan', PROSPECCION: 'orange', OTRO: 'default',
 };
 
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 50;
 
 export default function EmpresasPage() {
   const [empresas, setEmpresas] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: PAGE_SIZE, total: 0 });
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [persistedPageSize, setPersistedPageSize] = usePersistedState('empresas:pageSize', DEFAULT_PAGE_SIZE);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: persistedPageSize, total: 0 });
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
-  const [viewMode, setViewMode] = useState('tabla'); // 'tabla' | 'mapa'
+  const [viewMode, setViewMode] = usePersistedState('empresas:viewMode', 'tabla'); // 'tabla' | 'mapa'
   const [allEmpresas, setAllEmpresas] = useState([]);
   const [allSucursales, setAllSucursales] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -67,7 +73,7 @@ export default function EmpresasPage() {
     }, 300);
   }, []);
 
-  const fetchEmpresas = async (page = 1, pageSize = PAGE_SIZE, q = searchText) => {
+  const fetchEmpresas = async (page = 1, pageSize = persistedPageSize, q = searchText) => {
     setLoading(true);
     try {
       const skip = (page - 1) * pageSize;
@@ -78,10 +84,18 @@ export default function EmpresasPage() {
       message.error('Error al cargar empresas');
     } finally {
       setLoading(false);
+      setFirstLoad(false);
     }
   };
 
   useEffect(() => { fetchEmpresas(); }, []);
+
+  // Atajo Ctrl+N → Nueva empresa
+  useEffect(() => {
+    const onShortcut = (e) => { if (e.detail.key === 'new') openCreate(); };
+    window.addEventListener('crm:shortcut', onShortcut);
+    return () => window.removeEventListener('crm:shortcut', onShortcut);
+  }, []);
 
   // Cargar todas las empresas y sucursales para el mapa (sin paginacion)
   useEffect(() => {
@@ -92,6 +106,7 @@ export default function EmpresasPage() {
   }, [viewMode]);
 
   const handleTableChange = (pag) => {
+    if (pag.pageSize !== persistedPageSize) setPersistedPageSize(pag.pageSize);
     fetchEmpresas(pag.current, pag.pageSize, searchText);
   };
 
@@ -304,7 +319,10 @@ export default function EmpresasPage() {
         </Space>
       </div>
 
-      {viewMode === 'tabla' ? (
+      {viewMode === 'tabla' && firstLoad && loading && (
+        <TableSkeleton rows={8} columns={7} />
+      )}
+      {viewMode === 'tabla' && !(firstLoad && loading) && (
         <Table
           dataSource={empresas}
           columns={columns}
@@ -318,8 +336,24 @@ export default function EmpresasPage() {
           }}
           onChange={handleTableChange}
           size="middle"
+          locale={{
+            emptyText: !loading && (
+              <EmptyState
+                icon={<ShopOutlined />}
+                title={searchText ? 'Sin resultados' : 'Sin empresas'}
+                description={
+                  searchText
+                    ? `No se encontraron empresas que coincidan con "${searchText}"`
+                    : 'Todavía no hay empresas cargadas. Empezá creando la primera.'
+                }
+                actionLabel={!searchText ? 'Nueva empresa' : undefined}
+                onAction={!searchText ? openCreate : undefined}
+              />
+            ),
+          }}
         />
-      ) : (
+      )}
+      {viewMode !== 'tabla' && (
         <MapaEmpresas
           empresas={allEmpresas}
           sucursales={allSucursales}
@@ -350,7 +384,7 @@ export default function EmpresasPage() {
               type="warning"
               showIcon
               icon={<WarningOutlined />}
-              message="Empresas similares encontradas"
+              title="Empresas similares encontradas"
               description={
                 <List
                   size="small"
@@ -381,20 +415,11 @@ export default function EmpresasPage() {
               style={{ marginBottom: 16 }}
             />
           )}
-          <Form.Item name="origen" label="Origen" rules={[{ required: true }]}>
-            <Select options={toOptions(ORIGEN_EMPRESA)} />
-          </Form.Item>
-          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.origen !== cur.origen}>
-            {({ getFieldValue }) =>
-              ['REFERIDO', 'OTRO'].includes(getFieldValue('origen')) ? (
-                <Form.Item name="origen_detalle" label="Especificar origen">
-                  <Input placeholder="Ej: Recomendado por cliente X..." />
-                </Form.Item>
-              ) : null
-            }
-          </Form.Item>
           <Form.Item name="razon_social" label="Razon Social">
             <Input />
+          </Form.Item>
+          <Form.Item name="direccion" label="Direccion">
+            <Input placeholder="Ej: Calle Mayor 15, 2o B" />
           </Form.Item>
           <Space style={{ width: '100%' }} size="middle">
             <Form.Item name="ciudad" label="Ciudad" style={{ flex: 1 }}>
@@ -406,6 +431,18 @@ export default function EmpresasPage() {
           </Space>
           <Form.Item name="notas_comerciales" label="Notas comerciales">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="origen" label="Origen" rules={[{ required: true }]}>
+            <Select options={toOptions(ORIGEN_EMPRESA)} />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.origen !== cur.origen}>
+            {({ getFieldValue }) =>
+              ['REFERIDO', 'OTRO'].includes(getFieldValue('origen')) ? (
+                <Form.Item name="origen_detalle" label="Especificar origen">
+                  <Input placeholder="Ej: Recomendado por cliente X..." />
+                </Form.Item>
+              ) : null
+            }
           </Form.Item>
 
           {/* Sección contacto — solo al crear */}

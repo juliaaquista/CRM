@@ -20,6 +20,7 @@ import {
   TIPO_ACCION_COLOR, ESTADO_ACCION_COLOR, ESTADO_OFERTA_COLOR,
 } from '../constants/enums';
 import { formatPhone } from '../utils/phoneFormat';
+import { trackVisited } from '../utils/recentVisited';
 
 export default function EmpresaDetallePage() {
   const { id } = useParams();
@@ -69,6 +70,13 @@ export default function EmpresaDetallePage() {
       ]);
       setEmpresa(emp);
       setComerciales(comercialesData);
+
+      // Trackear como visitada recientemente
+      trackVisited('empresa', {
+        id: emp.id,
+        label: emp.nombre,
+        sublabel: emp.ciudad || emp.provincia || '',
+      });
 
       // Determinar si el usuario tiene acceso completo
       const tieneAcceso = isJefe || comercialesData.some((c) => c.comercial_id === user?.id);
@@ -400,6 +408,7 @@ export default function EmpresaDetallePage() {
         <Descriptions.Item label="Razon Social">
           <span style={{ textTransform: 'uppercase' }}>{empresa.razon_social || '-'}</span>
         </Descriptions.Item>
+        <Descriptions.Item label="Direccion" span={2}>{empresa.direccion || '-'}</Descriptions.Item>
         <Descriptions.Item label="Ciudad">{empresa.ciudad || '-'}</Descriptions.Item>
         <Descriptions.Item label="Provincia">{empresa.provincia || '-'}</Descriptions.Item>
         <Descriptions.Item label="Origen">

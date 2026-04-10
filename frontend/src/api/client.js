@@ -14,13 +14,21 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor: manejar 401 globalmente
+// Interceptor: manejar 401 globalmente (solo para sesiones expiradas, no para el login en sí)
 client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      removeToken();
-      window.location.href = '/login';
+      const url = error.config?.url || '';
+      const isLoginRequest = url.includes('/auth/login');
+      const hadToken = !!getToken();
+      // Solo forzar logout si había un token válido (sesión expirada) y no es el request de login
+      if (hadToken && !isLoginRequest) {
+        removeToken();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }

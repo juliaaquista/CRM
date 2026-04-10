@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Row, Col, Card, Statistic, Tag, Calendar, Badge, List, Progress, Spin,
+  Row, Col, Card, Statistic, Tag, Calendar, Badge, List, Progress, Spin, Button, Space,
   App as AntApp, Typography, Empty, Segmented,
 } from 'antd';
 import {
-  BankOutlined, FileTextOutlined,
+  BankOutlined, FileTextOutlined, PlusOutlined, HistoryOutlined,
   CheckSquareOutlined, ClockCircleOutlined, RightOutlined, WarningOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +15,7 @@ import {
   ESTADO_OFERTA_COLOR,
   TIPO_ACCION_COLOR,
 } from '../constants/enums';
+import { getRecentVisited } from '../utils/recentVisited';
 
 const { Text, Title } = Typography;
 
@@ -36,8 +37,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [calAcciones, setCalAcciones] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(dayjs());
+  const [recentEmpresas, setRecentEmpresas] = useState([]);
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
+
+  useEffect(() => {
+    setRecentEmpresas(getRecentVisited('empresa'));
+  }, []);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -112,7 +118,20 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Title level={4} style={{ marginTop: 0, marginBottom: 20 }}>Dashboard</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <Title level={4} style={{ margin: 0 }}>Dashboard</Title>
+        <Space wrap>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/empresas')}>
+            Nueva empresa
+          </Button>
+          <Button icon={<PlusOutlined />} onClick={() => navigate('/ofertas')}>
+            Nueva oferta
+          </Button>
+          <Button icon={<PlusOutlined />} onClick={() => navigate('/calendario')}>
+            Nueva acción
+          </Button>
+        </Space>
+      </div>
 
       {/* KPI Cards */}
       <Row gutter={[16, 16]}>
@@ -129,6 +148,60 @@ export default function DashboardPage() {
           </Col>
         ))}
       </Row>
+
+      {/* Row recientes: Últimas empresas visitadas */}
+      {recentEmpresas.length > 0 && (
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24}>
+            <Card
+              size="small"
+              title={<span><HistoryOutlined /> Últimas empresas visitadas</span>}
+              styles={{ body: { padding: 12 } }}
+            >
+              <Row gutter={[8, 8]}>
+                {recentEmpresas.map((emp) => (
+                  <Col xs={12} sm={8} md={6} lg={3} key={emp.id}>
+                    <div
+                      onClick={() => navigate(`/empresas/${emp.id}`)}
+                      className="recent-card"
+                      style={{
+                        padding: '10px 12px',
+                        border: '1px solid #f0f0f0',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        background: '#fafafa',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <div style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {emp.label}
+                      </div>
+                      {emp.sublabel && (
+                        <div style={{
+                          fontSize: 11,
+                          color: '#888',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}>
+                          {emp.sublabel}
+                        </div>
+                      )}
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Row 2: Calendar + Proximas acciones */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>

@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 
-def geocode_ciudad(ciudad: str | None, provincia: str | None) -> tuple[float | None, float | None]:
-    """Geocodifica ciudad+provincia en España. Retorna (latitud, longitud) o (None, None)."""
-    parts = [p for p in [ciudad, provincia, "España"] if p]
+def geocode_ciudad(ciudad: str | None, provincia: str | None, direccion: str | None = None) -> tuple[float | None, float | None]:
+    """Geocodifica direccion+ciudad+provincia en España. Retorna (latitud, longitud) o (None, None)."""
+    parts = [p for p in [direccion, ciudad, provincia, "España"] if p]
     query = ", ".join(parts)
-    if not ciudad and not provincia:
+    if not ciudad and not provincia and not direccion:
         return None, None
 
     try:

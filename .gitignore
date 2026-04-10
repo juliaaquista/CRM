@@ -1,5 +1,73 @@
-venv/
-__pycache__/
-*.pyc
-.env
+# ══════════════════════════════════════════════════════════════
+# Abisysa CRM — .gitignore
+# Qué NO se debe versionar con git
+# ══════════════════════════════════════════════════════════════
+
+# ── Datos del cliente / producción ──
+# NUNCA commitear datos reales ni pgdata local
+data/pgdata/
+data/backups/
 data/
+
+# ── Uploads ──
+# Archivos subidos por los usuarios (PDFs de empresa, etc.)
+backend/uploads/
+uploads/
+
+# ── Backend Python ──
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Frontend Node / Vite ──
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/build/
+node_modules/
+
+# ── Variables de entorno (credenciales) ──
+.env
+.env.local
+.env.production
+.env.*.local
+backend/.env
+frontend/.env
+
+# ── Editores / IDEs ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Claude Code (config local) ──
+.claude/
+
+# ── Logs ──
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Releases (los ZIPs generados por empaquetar.bat) ──
+releases/*.zip
+releases/
+
+# ── Temporales ──
+*.tmp
+*.temp
+*.bak
+*.backup

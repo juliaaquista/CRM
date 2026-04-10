@@ -15,31 +15,47 @@ import * as productosApi from '../api/productos';
 import * as empresasApi from '../api/empresas';
 import { ESTADO_OFERTA, ESTADO_OFERTA_COLOR, MODO_PAGO, toOptions, toEntityOptions } from '../constants/enums';
 import KanbanBoard from '../components/ofertas/KanbanBoard';
+import EmptyState from '../components/layout/EmptyState';
+import TableSkeleton from '../components/layout/TableSkeleton';
+import { FileTextOutlined } from '@ant-design/icons';
+import usePersistedState from '../hooks/usePersistedState';
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
 
 export default function OfertasPage() {
   const [ofertas, setOfertas] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: PAGE_SIZE, total: 0 });
-  const [viewMode, setViewMode] = useState('table');
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [persistedPageSize, setPersistedPageSize] = usePersistedState('ofertas:pageSize', DEFAULT_PAGE_SIZE);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: persistedPageSize, total: 0 });
+  const [viewMode, setViewMode] = usePersistedState('ofertas:viewMode', 'table');
   const [kanbanItems, setKanbanItems] = useState([]);
   const [kanbanLoading, setKanbanLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [sortInfo, setSortInfo] = usePersistedState('ofertas:sort', { field: null, order: null });
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
 
-  const fetchOfertas = async (page = 1, pageSize = PAGE_SIZE, q = searchText) => {
+  const fetchOfertas = async (
+    page = 1,
+    pageSize = persistedPageSize,
+    q = searchText,
+    sort = sortInfo,
+  ) => {
     setLoading(true);
     try {
       const skip = (page - 1) * pageSize;
       const params = { skip, limit: pageSize };
       if (q) params.q = q;
+      if (sort && sort.field && sort.order) {
+        params.sort_by = sort.field;
+        params.sort_order = sort.order === 'ascend' ? 'asc' : 'desc';
+      }
       const res = await ofertasApi.list(params);
       setOfertas(res.items);
       setPagination({ current: page, pageSize, total: res.total });
@@ -47,6 +63,7 @@ export default function OfertasPage() {
       message.error('Error al cargar ofertas');
     } finally {
       setLoading(false);
+      setFirstLoad(false);
     }
   };
 
@@ -82,24 +99,49 @@ export default function OfertasPage() {
     fetchProductos();
   }, []);
 
+  // Atajo Ctrl+N → Nueva oferta
+  useEffect(() => {
+    const onShortcut = (e) => { if (e.detail.key === 'new') openCreate(); };
+    window.addEventListener('crm:shortcut', onShortcut);
+    return () => window.removeEventListener('crm:shortcut', onShortcut);
+  }, []);
+
   useEffect(() => {
     if (viewMode === 'kanban') {
       fetchKanban();
     }
   }, [viewMode]);
 
-  const handleTableChange = (pag) => {
-    fetchOfertas(pag.current, pag.pageSize, searchText);
+  const handleTableChange = (pag, _filters, sorter) => {
+    // Mapear dataIndex de la columna al campo del backend
+    const dataIndexToField = {
+      numero: 'numero',
+      creado_en: 'creado_en',
+      productos: 'producto',
+    };
+    let nextSort = { field: null, order: null };
+    if (sorter && sorter.order) {
+      const field = dataIndexToField[sorter.field] || null;
+      if (field) nextSort = { field, order: sorter.order };
+    }
+    setSortInfo(nextSort);
+    if (pag.pageSize !== persistedPageSize) setPersistedPageSize(pag.pageSize);
+    fetchOfertas(pag.current, pag.pageSize, searchText, nextSort);
   };
 
   const handleSearch = (value) => {
     setSearchText(value);
-    fetchOfertas(1, pagination.pageSize, value || null);
+    fetchOfertas(1, pagination.pageSize, value || null, sortInfo);
   };
 
   const empresaNombre = (id) => {
     const e = empresas.find((emp) => emp.id === id);
-    return e ? (e.razon_social || e.nombre) : `#${id}`;
+    return e ? e.nombre : `#${id}`;
+  };
+
+  const empresaRazonSocial = (id) => {
+    const e = empresas.find((emp) => emp.id === id);
+    return e?.razon_social || '-';
   };
 
   const productoNombre = (id) => {
@@ -167,12 +209,22 @@ export default function OfertasPage() {
   };
 
   const columns = [
-    { title: 'Nº', dataIndex: 'numero', width: 110, render: (val, rec) => val || `#${rec.id}` },
+    {
+      title: 'Nº', dataIndex: 'numero', width: 110,
+      render: (val, rec) => val || `#${rec.id}`,
+      sorter: true,
+      sortOrder: sortInfo.field === 'numero' ? sortInfo.order : null,
+    },
     {
       title: 'Empresa', dataIndex: 'empresa_id',
       render: (val) => (
         <a onClick={() => navigate(`/empresas/${val}`)} style={{ textTransform: 'uppercase' }}>{empresaNombre(val)}</a>
       ),
+    },
+    {
+      title: 'Razon Social', dataIndex: 'empresa_id', key: 'razon_social',
+      render: (val) => <span style={{ textTransform: 'uppercase' }}>{empresaRazonSocial(val)}</span>,
+      ellipsis: true,
     },
     {
       title: 'Productos', dataIndex: 'productos',
@@ -182,6 +234,8 @@ export default function OfertasPage() {
         return <span style={{ textTransform: 'uppercase' }}>{text}</span>;
       },
       ellipsis: true,
+      sorter: true,
+      sortOrder: sortInfo.field === 'producto' ? sortInfo.order : null,
     },
     {
       title: 'Estado', dataIndex: 'estado',
@@ -198,6 +252,9 @@ export default function OfertasPage() {
     {
       title: 'Creada', dataIndex: 'creado_en',
       render: (val) => val ? dayjs(val).format('DD/MM/YYYY') : '-',
+      sorter: true,
+      sortOrder: sortInfo.field === 'creado_en' ? sortInfo.order : null,
+      defaultSortOrder: 'descend',
     },
     {
       title: '', width: 100,
@@ -240,7 +297,10 @@ export default function OfertasPage() {
         </Button>
       </div>
 
-      {viewMode === 'table' ? (
+      {viewMode === 'table' && firstLoad && loading && (
+        <TableSkeleton rows={8} columns={7} />
+      )}
+      {viewMode === 'table' && !(firstLoad && loading) && (
         <Table
           dataSource={ofertas}
           columns={columns}
@@ -254,8 +314,24 @@ export default function OfertasPage() {
           }}
           onChange={handleTableChange}
           size="middle"
+          locale={{
+            emptyText: !loading && (
+              <EmptyState
+                icon={<FileTextOutlined />}
+                title={searchText ? 'Sin resultados' : 'Sin ofertas'}
+                description={
+                  searchText
+                    ? `No se encontraron ofertas para "${searchText}"`
+                    : 'Empezá creando la primera oferta de un cliente.'
+                }
+                actionLabel={!searchText ? 'Nueva oferta' : undefined}
+                onAction={!searchText ? openCreate : undefined}
+              />
+            ),
+          }}
         />
-      ) : (
+      )}
+      {viewMode !== 'table' && (
         <KanbanBoard
           items={kanbanItems}
           loading={kanbanLoading}

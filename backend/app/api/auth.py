@@ -55,17 +55,29 @@ def registrar_usuario(
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Autentica al usuario y devuelve un token JWT.
     En el campo 'username' usar el email del usuario."""
+    if not form_data.username or not form_data.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes ingresar email y contraseña",
+        )
+
     usuario = db.query(Usuario).filter(Usuario.email == form_data.username).first()
-    if not usuario or not verify_password(form_data.password, usuario.password):
+    if not usuario:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas",
+            detail="No existe ningún usuario con ese email",
+        )
+
+    if not verify_password(form_data.password, usuario.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Contraseña incorrecta",
         )
 
     if not usuario.activo:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuario inactivo",
+            detail="Tu usuario está desactivado. Contacta al administrador.",
         )
 
     access_token = create_access_token(data={"sub": str(usuario.id)})

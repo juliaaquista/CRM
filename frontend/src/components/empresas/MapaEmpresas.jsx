@@ -25,7 +25,7 @@ const sucursalIcon = new L.Icon({
 
 const ORIGEN_COLOR = {
   WEB: 'blue', FERIAS: 'green', RRSS: 'purple',
-  ABISYSA: '#13468A', REFERIDO: 'cyan', OTRO: 'default',
+  ABISYSA: '#13468A', REFERIDO: 'cyan', PROSPECCION: 'orange', OTRO: 'default',
 };
 
 // Auto-fit bounds to markers
@@ -85,6 +85,7 @@ export default function MapaEmpresas({ empresas, sucursales = [], onVerDetalle }
             <div style={{ minWidth: 180 }}>
               <strong style={{ fontSize: 14 }}>{emp.nombre}</strong>
               <br />
+              {emp.direccion && <><span style={{ fontSize: 12 }}>{emp.direccion}</span><br /></>}
               {emp.ciudad && <span>{emp.ciudad}</span>}
               {emp.ciudad && emp.provincia && <span>, </span>}
               {emp.provincia && <span>{emp.provincia}</span>}
