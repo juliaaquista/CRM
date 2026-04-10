@@ -1,60 +1,45 @@
 ================================================================
-                    ABISYSA CRM v2.0
+                    ABISYSA CRM v1.0
                      Marzo 2026
 ================================================================
 
 CONTENIDO DE ESTA CARPETA
 --------------------------
-  backend/                             -> Servidor de la aplicacion (Python/FastAPI)
-  frontend/                            -> Interfaz grafica (React)
-  backup/                              -> Scripts de backup
-  Manual_Usuario_Abisysa_CRM.pdf       -> Manual completo del CRM
-  README.txt                           -> Este archivo
+  INSTALAR.bat                  -> Ejecutar UNA SOLA VEZ para instalar
+  INICIAR.bat                   -> Ejecutar cada vez que quieras usar el CRM
+  Manual_Instalacion_Abisysa_CRM.pdf  -> Guia de instalacion paso a paso
+  Manual_Usuario_CRM_Abisysa.pdf      -> Manual completo del CRM
+  backend/                      -> Servidor de la aplicacion
+  frontend/                     -> Interfaz grafica
 
 
-ARQUITECTURA
---------------------------
-  La aplicacion corre completamente en el servidor.
-  Los usuarios acceden desde cualquier navegador web
-  (Chrome, Firefox, Edge, movil) sin instalar nada.
+INSTALACION RAPIDA (5 pasos)
+-----------------------------
+  1. Instalar Python 3.12  ->  https://www.python.org/downloads/
+     IMPORTANTE: Marcar "Add Python to PATH" al instalar
 
-  Servidor: 192.168.1.15 (local) / abisysa-server.eur3.ug.link (remoto)
-  Base de datos: PostgreSQL en el mismo servidor (puerto 5433)
+  2. Instalar Node.js LTS  ->  https://nodejs.org/es
 
+  3. Reiniciar el ordenador
 
-CONFIGURACION INICIAL (una sola vez)
---------------------------------------
-  1. Instalar Python 3.12+
-  2. Instalar Node.js 24+
-  3. Crear entorno virtual:
-       cd backend
-       python3 -m venv venv
-       source venv/bin/activate
-       pip install -r requirements.txt
+  4. Doble clic en INSTALAR.bat (solo la primera vez)
 
-  4. Instalar frontend:
-       cd frontend
-       npm install
-
-  5. Configurar backend/.env con los datos de conexion a PostgreSQL
-
-  6. Crear tablas y usuarios iniciales:
-       cd backend
-       source venv/bin/activate
-       python3 -m app.seed
-
-  7. Iniciar la aplicacion:
-       Backend:  cd backend && source venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8002
-       Frontend: cd frontend && npm run dev -- --host 0.0.0.0
+  5. Doble clic en INICIAR.bat (se abre el navegador con el CRM)
 
 
-ACCESO DE USUARIOS
---------------------
-  Los comerciales acceden desde el navegador a:
-    http://192.168.1.15:5173  (desde la oficina)
-    http://abisysa-server.eur3.ug.link:5173  (desde fuera)
+USO DIARIO
+-----------
+  - Doble clic en INICIAR.bat para abrir el CRM
+  - Se abre automaticamente en el navegador
+  - Para cerrar: pulsa cualquier tecla en la ventana negra
 
-  No necesitan instalar nada en sus ordenadores.
+
+REQUISITOS
+-----------
+  - Windows 10 o superior
+  - Python 3.12+
+  - Node.js 24+
+  - Conexion a la red de la empresa (para la base de datos)
 
 
 CREDENCIALES DE PRUEBA
@@ -64,9 +49,14 @@ CREDENCIALES DE PRUEBA
   Comercial:  martin@abisysa.com     /  comercial123
 
 
-REPOSITORIO
-------------
-  GitHub: https://github.com/juliaaquista/CRM.git
+PROBLEMAS FRECUENTES
+---------------------
+  "Python no se reconoce"    -> Reinstalar Python marcando "Add to PATH"
+  "npm no se reconoce"       -> Reiniciar el ordenador
+  "Error de base de datos"   -> Verificar conexion a la red de la oficina
+  "Pagina en blanco"         -> Pulsar F5 en el navegador
+
+  Para mas detalles ver: Manual_Instalacion_Abisysa_CRM.pdf
 
 
 SOPORTE
